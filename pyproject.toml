@@ -10,3 +10,8 @@ license-files = ["LICENSE"]
 authors = [
   { name="Eivind Tøstesen", email="contact@tostesen.no" },
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11.5",
+]
