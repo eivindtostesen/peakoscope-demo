@@ -7,14 +7,59 @@ import peakoscope
 import peakoscope.interface_matplotlib
 import peakoscope.interface_pandas
 
-st.title("🎈 My new app")
+st.title("Peakoscope demo")
 
 with st.echo(code_location="below"):
-    # input widget columns:
-    col1, col2, col3 = st.columns([1, 1, 2])
+    with st.sidebar:
+        st.header("Generate data set")
+        if "seeds_list" not in st.session_state:
+            st.session_state.seeds_list = ["It's...", "The fjords"]
+            st.session_state.input_seed = None
 
-    # choose peaks or valleys:
-    with col1:
+        # choose data set (random seed) from list:
+        st.selectbox(
+            "Select random seed value:",
+            st.session_state.seeds_list,
+            key="selected_seed",
+        )
+
+        # add new random seed to list:
+        def insert_new_seed():
+            new = st.session_state.input_seed
+            if new and new not in st.session_state.seeds_list:
+                st.session_state.seeds_list.insert(0, new)
+                st.session_state.input_seed = None
+
+        st.text_input(
+            "Or enter a new random seed:",
+            placeholder="Something completely different",
+            max_chars=25,
+            on_change=insert_new_seed,
+            key="input_seed",
+        )
+
+        # choose window:
+        st.slider(
+            "Choose range of data set (x-axis):",
+            min_value=1900,
+            max_value=3000,
+            value=(1900, 2100),
+            key="range",
+        )
+
+    # generate data set:
+    range_start, range_end = st.session_state.range
+    data_X, data_Y = peakoscope.example_2(
+        length=range_end - 1900 + 1, randomseed=st.session_state.selected_seed
+    )
+    data_X = data_X[range_start - 1900 :]
+    data_Y = data_Y[range_start - 1900 :]
+
+    # columns with input widgets:
+    radio_col, check_col, slider_col = st.columns([1, 1, 2])
+
+    # choose algorithm:
+    with radio_col:
         st.radio(
             "Let Peakoscope find:",
             ["Peaks", "Valleys"],
@@ -30,7 +75,7 @@ with st.echo(code_location="below"):
         edgecolor = "C1"
 
     # choose plot types:
-    with col2:
+    with check_col:
         bounding_boxes_visible = st.checkbox(
             "Plot bounding boxes",
             value=True,
@@ -41,19 +86,14 @@ with st.echo(code_location="below"):
         )
 
     # choose input parameter:
-    with col3:
+    with slider_col:
         st.slider(
             "Upper limit on vertical size:",
-            min_value=0.0,
-            max_value=40.0,
-            value=5.0,
-            step=0.1,
-            format="%0.1f",
+            min_value=0,
+            max_value=int(max(data_Y) - min(data_Y) + 1),
+            value=int(0.2 * (max(data_Y) - min(data_Y))),
             key="maxsize",
         )
-
-    # get data set:
-    data_X, data_Y = peakoscope.example_2()
 
     # process data set:
     tree = peakoscope.tree(data_Y, valleys=find_valleys)
@@ -68,7 +108,7 @@ with st.echo(code_location="below"):
         slice_of_y={n: n.subarray(data_Y) for n in tree},
     )
     fig, tree.plot.ax = plt.subplots()
-    tree.plot.ax.set_title(st.session_state.radio)
+    tree.plot.ax.set_title(f"{st.session_state.radio} in data")
     tree.plot.ax.plot(data_X, data_Y)
     if crowns_visible:
         tree.plot.crowns(filtered_output, facecolor=facecolor)
@@ -91,16 +131,18 @@ with st.echo(code_location="below"):
     )
 
     # columns with output:
-    col1, col2 = st.columns([6, 4])
+    fig_col, df_col = st.columns([6, 4])
 
     # show the matplotlib figure:
-    with col1:
+    with fig_col:
         st.pyplot(fig)
 
     # show the pandas dataframe:
-    with col2:
+    with df_col:
         st.dataframe(
             df,
             use_container_width=False,
             hide_index=True,
         )
+
+    st.subheader("Code")
