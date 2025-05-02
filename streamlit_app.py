@@ -7,10 +7,13 @@ import peakoscope
 import peakoscope.interface_matplotlib
 import peakoscope.interface_pandas
 
-st.title("Peakoscope demo")
+st.title("Peak and valley regions")
 
 with st.echo(code_location="below"):
     with st.sidebar:
+        st.markdown(
+            "[Peakoscope](https://pypi.org/project/peakoscope/) is a python package for hierarchical analysis of peak and valley regions in numeric data."
+        )
         st.header("Generate data set")
         if "seeds_list" not in st.session_state:
             st.session_state.seeds_list = ["It's...", "The fjords"]
@@ -107,7 +110,8 @@ with st.echo(code_location="below"):
         slice_of_x={n: n.subarray(data_X) for n in tree},
         slice_of_y={n: n.subarray(data_Y) for n in tree},
     )
-    fig, tree.plot.ax = plt.subplots()
+    fig, tree.plot.ax = plt.subplots(facecolor="0.95")
+    tree.plot.ax.set_facecolor("0.95")
     tree.plot.ax.set_title(f"{st.session_state.radio} in data")
     tree.plot.ax.plot(data_X, data_Y)
     if crowns_visible:
@@ -139,6 +143,10 @@ with st.echo(code_location="below"):
 
     # show the pandas dataframe:
     with df_col:
+        if find_valleys:
+            st.caption("Table of valley regions")
+        else:
+            st.caption("Table of peak regions")
         st.dataframe(
             df,
             use_container_width=False,
